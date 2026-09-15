@@ -1,6 +1,6 @@
 {
   "name": "hostkey-mcp-server-ru",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "description": "MCP server for Hostkey .ru portal (InvAPI invapi.hostkey.ru): servers, power, ordering, reinstall, DNS, S3, billing",
   "license": "MIT",
   "type": "module",
@@ -35,8 +35,7 @@
     "prepublishOnly": "npm run typecheck && npm run build"
   },
   "publishConfig": {
-    "access": "public",
-    "provenance": true
+    "access": "public"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
