@@ -23,13 +23,6 @@ MCP-сервер для [Hostkey](https://hostkey.ru/) (портал **.ru**, In
 
 ## 2. Установка
 
-Нужен Node.js ≥ 20.
-
-```bash
-npm install
-npm run build
-```
-
 ### Cursor
 
 `.cursor/mcp.json`:
@@ -38,8 +31,8 @@ npm run build
 {
   "mcpServers": {
     "hostkey-mcp-server-ru": {
-      "command": "node",
-      "args": ["/absolute/path/to/hostkey-mcp-server-ru/dist/index.mjs"],
+      "command": "npx",
+      "args": ["-y", "hostkey-mcp-server-ru"],
       "env": {
         "HOSTKEY_API_KEY": "your-api-key"
       }
@@ -56,8 +49,8 @@ npm run build
 {
   "mcp.servers": {
     "hostkey-mcp-server-ru": {
-      "command": "node",
-      "args": ["/absolute/path/to/hostkey-mcp-server-ru/dist/index.mjs"],
+      "command": "npx",
+      "args": ["-y", "hostkey-mcp-server-ru"],
       "env": {
         "HOSTKEY_API_KEY": "your-api-key"
       }
@@ -68,6 +61,8 @@ npm run build
 
 Опционально: `HOSTKEY_TOKEN_TTL`, `HOSTKEY_HTTP_TIMEOUT`, `HOSTKEY_ALLOW_DESTRUCTIVE`
 (см. `.env.example`).
+
+Из исходников (Node.js ≥ 20): `npm install && npm run build`.
 
 ## 3. Подтверждение опасных операций
 
