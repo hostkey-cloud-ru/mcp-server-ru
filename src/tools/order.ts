@@ -11,7 +11,7 @@ const deployPeriods = [
   "annually",
 ] as const;
 
-/** Заказ и переустановка (eq/order_instance). */
+/** Р—Р°РєР°Р· Рё РїРµСЂРµСѓСЃС‚Р°РЅРѕРІРєР° (eq/order_instance). */
 export function registerOrderTools(
   server: McpServer,
   client: InvApiClient,
@@ -104,7 +104,7 @@ export function registerOrderTools(
       } = args;
 
       if (dry_run) {
-        // dry_run: только проверка, без заказа
+        // dry_run: С‚РѕР»СЊРєРѕ РїСЂРѕРІРµСЂРєР°, Р±РµР· Р·Р°РєР°Р·Р°
         try {
           const checks: Record<string, unknown> = {};
           const presetCheck = (await client.call("presets", "search", {

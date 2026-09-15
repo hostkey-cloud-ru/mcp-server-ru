@@ -6,7 +6,7 @@ import { registerRead, registerAction } from "./helpers.js";
 const idField = { id: z.number().int().describe("ID виртуальной машины") };
 const nameField = { name: z.string().describe("Имя снапшота") };
 
-/** �������� � ���������� �� (vm.php). */
+/** Снапшоты и статистика ВМ (vm.php). */
 export function registerVmTools(server: McpServer, client: InvApiClient): void {
   registerRead(
     server,

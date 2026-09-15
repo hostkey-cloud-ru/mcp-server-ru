@@ -10,7 +10,7 @@ function userMessage(text: string): { messages: PromptMessage[] } {
   return { messages: [{ role: "user", content: { type: "text", text } }] };
 }
 
-/** Промпты поверх инструментов. */
+/** РџСЂРѕРјРїС‚С‹ РїРѕРІРµСЂС… РёРЅСЃС‚СЂСѓРјРµРЅС‚РѕРІ. */
 export function registerPrompts(server: McpServer): void {
   server.registerPrompt(
     "order_server_prompt",

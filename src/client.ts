@@ -1,11 +1,11 @@
-/** HTTP-клиент Hostkey InvAPI. */
+/** HTTP-РєР»РёРµРЅС‚ Hostkey InvAPI. */
 
 export interface InvApiClientOptions {
-  /** API-ключ InvAPI. */
+  /** API-РєР»СЋС‡ InvAPI. */
   apiKey: string;
-  /** TTL сессии в секундах (по умолчанию 3600). */
+  /** TTL СЃРµСЃСЃРёРё РІ СЃРµРєСѓРЅРґР°С… (РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ 3600). */
   tokenTtlSeconds?: number;
-  /** HTTP-таймаут в секундах (по умолчанию 60). */
+  /** HTTP-С‚Р°Р№РјР°СѓС‚ РІ СЃРµРєСѓРЅРґР°С… (РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ 60). */
   httpTimeoutSeconds?: number;
 }
 
@@ -20,7 +20,7 @@ export class InvApiError extends Error {
   }
 }
 
-/** Endpoint .ru зашит. Для .com — пакет hostkey-mcp-server. */
+/** Endpoint .ru Р·Р°С€РёС‚. Р”Р»СЏ .com вЂ” РїР°РєРµС‚ hostkey-mcp-server. */
 const INVAPI_BASE_URL = "https://invapi.hostkey.ru";
 const DEFAULT_TOKEN_TTL = 3600;
 const DEFAULT_HTTP_TIMEOUT = 60;
@@ -33,7 +33,7 @@ const SECRET_KEYS = new Set([
   "api_key",
 ]);
 
-/** Прячем секреты в ответах/логах. */
+/** РџСЂСЏС‡РµРј СЃРµРєСЂРµС‚С‹ РІ РѕС‚РІРµС‚Р°С…/Р»РѕРіР°С…. */
 export function maskSecrets(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(maskSecrets);
   if (value && typeof value === "object") {
@@ -47,7 +47,7 @@ export function maskSecrets(value: unknown): unknown {
   return value;
 }
 
-/** Разворачиваем вложенные объекты в form-поля InvAPI. */
+/** Р Р°Р·РІРѕСЂР°С‡РёРІР°РµРј РІР»РѕР¶РµРЅРЅС‹Рµ РѕР±СЉРµРєС‚С‹ РІ form-РїРѕР»СЏ InvAPI. */
 function flattenFields(
   fields: Record<string, unknown>,
 ): Array<[string, string]> {
@@ -70,9 +70,9 @@ function flattenFields(
 }
 
 interface CallOptions {
-  /** Подставлять сессионный токен (по умолчанию да). */
+  /** РџРѕРґСЃС‚Р°РІР»СЏС‚СЊ СЃРµСЃСЃРёРѕРЅРЅС‹Р№ С‚РѕРєРµРЅ (РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РґР°). */
   auth?: boolean;
-  /** Внутреннее: не зацикливать relogin. */
+  /** Р’РЅСѓС‚СЂРµРЅРЅРµРµ: РЅРµ Р·Р°С†РёРєР»РёРІР°С‚СЊ relogin. */
   retried?: boolean;
 }
 
@@ -99,7 +99,7 @@ export class InvApiClient {
   }
 
   private async ensureToken(): Promise<string> {
-    // Обновляем за минуту до истечения.
+    // РћР±РЅРѕРІР»СЏРµРј Р·Р° РјРёРЅСѓС‚Сѓ РґРѕ РёСЃС‚РµС‡РµРЅРёСЏ.
     if (this.token && Date.now() < this.tokenExpiresAtMs - 60_000)
       return this.token;
 
@@ -107,10 +107,10 @@ export class InvApiClient {
       action: "login",
       key: this.apiKey,
       ttl: this.tokenTtl,
-      fix_ip: 0, // не привязывать токен к IP
+      fix_ip: 0, // РЅРµ РїСЂРёРІСЏР·С‹РІР°С‚СЊ С‚РѕРєРµРЅ Рє IP
     })) as Record<string, unknown>;
 
-    // Токен в result.token; плоские token/scope — запасной вариант.
+    // РўРѕРєРµРЅ РІ result.token; РїР»РѕСЃРєРёРµ token/scope вЂ” Р·Р°РїР°СЃРЅРѕР№ РІР°СЂРёР°РЅС‚.
     const nested =
       res.result && typeof res.result === "object"
         ? (res.result as Record<string, unknown>)
@@ -187,7 +187,7 @@ export class InvApiClient {
     return json;
   }
 
-  /** Вызов InvAPI. При 401 один раз перелогинивается. */
+  /** Р’С‹Р·РѕРІ InvAPI. РџСЂРё 401 РѕРґРёРЅ СЂР°Р· РїРµСЂРµР»РѕРіРёРЅРёРІР°РµС‚СЃСЏ. */
   async call(
     resource: string,
     action: string,
@@ -225,14 +225,14 @@ export class InvApiClient {
     }
   }
 
-  /** Один раз за токен обновляем список серверов перед eq/list|show. */
+  /** РћРґРёРЅ СЂР°Р· Р·Р° С‚РѕРєРµРЅ РѕР±РЅРѕРІР»СЏРµРј СЃРїРёСЃРѕРє СЃРµСЂРІРµСЂРѕРІ РїРµСЂРµРґ eq/list|show. */
   async ensureServersRefreshed(): Promise<void> {
     if (this.serversRefreshed) return;
     await this.call("eq", "update_servers");
     this.serversRefreshed = true;
   }
 
-  /** Статус async-задачи по callback (без авторизации). */
+  /** РЎС‚Р°С‚СѓСЃ async-Р·Р°РґР°С‡Рё РїРѕ callback (Р±РµР· Р°РІС‚РѕСЂРёР·Р°С†РёРё). */
   async checkTask(callbackKey: string): Promise<unknown> {
     return this.call(
       "eq_callback",

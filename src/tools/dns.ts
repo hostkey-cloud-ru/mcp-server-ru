@@ -3,7 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { InvApiClient } from "../client.js";
 import { registerRead, registerAction } from "./helpers.js";
 
-/** DNS (pdns.php). Чтение — pdns/view, запись — pdns/edit. */
+/** DNS (pdns.php). Р§С‚РµРЅРёРµ вЂ” pdns/view, Р·Р°РїРёСЃСЊ вЂ” pdns/edit. */
 export function registerDnsTools(
   server: McpServer,
   client: InvApiClient,

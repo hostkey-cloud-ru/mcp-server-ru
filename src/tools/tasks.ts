@@ -3,7 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { InvApiClient } from "../client.js";
 import { ok, fail } from "./helpers.js";
 
-/** Асинхронные задачи InvAPI (callback). */
+/** РђСЃРёРЅС…СЂРѕРЅРЅС‹Рµ Р·Р°РґР°С‡Рё InvAPI (callback). */
 export function registerTaskTools(
   server: McpServer,
   client: InvApiClient,

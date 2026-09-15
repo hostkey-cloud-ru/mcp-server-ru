@@ -3,7 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { InvApiClient } from "../client.js";
 import { registerRead, registerAction } from "./helpers.js";
 
-/** Заявки Remote Hands (rhr.php). */
+/** Р—Р°СЏРІРєРё Remote Hands (rhr.php). */
 export function registerRhrTools(
   server: McpServer,
   client: InvApiClient,

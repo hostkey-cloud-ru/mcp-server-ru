@@ -3,7 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { InvApiClient } from "../client.js";
 import { ok, fail } from "./helpers.js";
 
-/** Серверы и теги (eq, tags). */
+/** РЎРµСЂРІРµСЂС‹ Рё С‚РµРіРё (eq, tags). */
 export function registerServerTools(
   server: McpServer,
   client: InvApiClient,

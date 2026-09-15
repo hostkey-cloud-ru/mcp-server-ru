@@ -3,7 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { InvApiClient } from "../client.js";
 import { registerRead, registerAction } from "./helpers.js";
 
-/** Биллинг (whmcs.php). Платные и отмены — с confirm; часть ещё с HOSTKEY_ALLOW_DESTRUCTIVE. */
+/** Р‘РёР»Р»РёРЅРі (whmcs.php). РџР»Р°С‚РЅС‹Рµ Рё РѕС‚РјРµРЅС‹ вЂ” СЃ confirm; С‡Р°СЃС‚СЊ РµС‰С‘ СЃ HOSTKEY_ALLOW_DESTRUCTIVE. */
 export function registerBillingTools(
   server: McpServer,
   client: InvApiClient,

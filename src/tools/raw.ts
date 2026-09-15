@@ -4,11 +4,11 @@ import type { InvApiClient } from "../client.js";
 import { ok, fail, note } from "./helpers.js";
 import { maskSecrets } from "../client.js";
 
-/** Действия, которым ещё нужен HOSTKEY_ALLOW_DESTRUCTIVE=1. */
+/** Р”РµР№СЃС‚РІРёСЏ, РєРѕС‚РѕСЂС‹Рј РµС‰С‘ РЅСѓР¶РµРЅ HOSTKEY_ALLOW_DESTRUCTIVE=1. */
 const DANGEROUS_ACTIONS =
   /^(delete|remove|off|reboot|reinstall|create_pxe|clear_pxe|boot_dev|order_instance|request_cancellation|apply_credit|mass_pay|create_addfunds|restore_snapshot|remove_snapshot|port_off|block_ip|request_poff|request_reboot)/i;
 
-/** Прямой вызов InvAPI, если нет типизированного инструмента. */
+/** РџСЂСЏРјРѕР№ РІС‹Р·РѕРІ InvAPI, РµСЃР»Рё РЅРµС‚ С‚РёРїРёР·РёСЂРѕРІР°РЅРЅРѕРіРѕ РёРЅСЃС‚СЂСѓРјРµРЅС‚Р°. */
 export function registerRawTool(server: McpServer, client: InvApiClient): void {
   server.registerTool(
     "call_api_raw",

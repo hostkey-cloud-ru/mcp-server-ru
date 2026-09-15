@@ -6,10 +6,10 @@ import { registerAction } from "./helpers.js";
 const idField = { id: z.number().int().describe("ID СЃРµСЂРІРµСЂР°") };
 
 /**
- * PXE-переустановка (Foreman), если reinstall_server не хватает.
- * Цепочка: create_reinstall_task > create_pxe_config > boot pxe > reboot >
+ * PXE-РїРµСЂРµСѓСЃС‚Р°РЅРѕРІРєР° (Foreman), РµСЃР»Рё reinstall_server РЅРµ С…РІР°С‚Р°РµС‚.
+ * Р¦РµРїРѕС‡РєР°: create_reinstall_task > create_pxe_config > boot pxe > reboot >
  * wait > boot disk > clear_pxe_config.
- * Нужны HOSTKEY_ALLOW_DESTRUCTIVE=1 и confirm=true.
+ * РќСѓР¶РЅС‹ HOSTKEY_ALLOW_DESTRUCTIVE=1 Рё confirm=true.
  */
 export function registerPxeTools(
   server: McpServer,

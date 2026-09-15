@@ -3,7 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { InvApiClient } from "../client.js";
 import { registerRead, registerAction } from "./helpers.js";
 
-/** ISO-образы (iso.php). */
+/** ISO-РѕР±СЂР°Р·С‹ (iso.php). */
 export function registerIsoTools(
   server: McpServer,
   client: InvApiClient,

@@ -11,7 +11,7 @@ const accountField = {
     .describe("ID S3-аккаунта (если требуется; уточняйте через s3_get_users)"),
 };
 
-/** S3 (s3.php). create_order � �������; ����� delete ����� HOSTKEY_ALLOW_DESTRUCTIVE. */
+/** S3 (s3.php). create_order — платный; часть delete нужен HOSTKEY_ALLOW_DESTRUCTIVE. */
 export function registerS3Tools(server: McpServer, client: InvApiClient): void {
   registerRead(
     server,

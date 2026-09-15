@@ -36,7 +36,7 @@ async function guarded(
   }
 }
 
-/** Питание (eq/on, eq/off, eq/reboot). Нужен confirm. */
+/** РџРёС‚Р°РЅРёРµ (eq/on, eq/off, eq/reboot). РќСѓР¶РµРЅ confirm. */
 export function registerPowerTools(
   server: McpServer,
   client: InvApiClient,
