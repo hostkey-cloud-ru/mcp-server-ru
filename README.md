@@ -25,7 +25,11 @@ MCP-сервер для [Hostkey](https://hostkey.ru/) (портал **.ru**, In
 
 ### Cursor
 
-`.cursor/mcp.json`:
+[![Install in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=hostkey-mcp-server-ru&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsImhvc3RrZXktbWNwLXNlcnZlci1ydSJdLCJlbnYiOnsiSE9TVEtFWV9BUElfS0VZIjoiWU9VUl9BUElfS0VZIn19)
+
+Нажми кнопку, подставь свой InvAPI-ключ вместо `YOUR_API_KEY`, подтверди.
+
+Или вручную в `.cursor/mcp.json`:
 
 ```json
 {
