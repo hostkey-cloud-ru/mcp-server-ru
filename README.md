@@ -2,6 +2,7 @@
 
 MCP-сервер для [Hostkey](https://hostkey.ru/) (портал **.ru**, InvAPI `invapi.hostkey.ru`).
 Клиент запускает сервер локально по stdio — из Cursor, VS Code и других MCP-клиентов.
+Удалённый endpoint: `https://mcp.hostkey.ru/mcp` (для облачных агентов).
 
 | | |
 |---|---|
@@ -39,6 +40,23 @@ MCP-сервер для [Hostkey](https://hostkey.ru/) (портал **.ru**, In
       "args": ["-y", "hostkey-mcp-server-ru"],
       "env": {
         "HOSTKEY_API_KEY": "your-api-key"
+      }
+    }
+  }
+}
+```
+
+### Remote (облачные агенты)
+
+Без локального Node/`npx`. URL сервиса + InvAPI-ключ:
+
+```json
+{
+  "mcpServers": {
+    "hostkey": {
+      "url": "https://mcp.hostkey.ru/mcp",
+      "headers": {
+        "Authorization": "Bearer your-api-key"
       }
     }
   }
