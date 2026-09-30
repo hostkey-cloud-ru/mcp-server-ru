@@ -69,7 +69,7 @@ MCP-сервер для [Hostkey](https://hostkey.ru/) (портал **.ru**, In
 
 ```json
 {
-  "mcp.servers": {
+  "servers": {
     "hostkey-mcp-server-ru": {
       "command": "npx",
       "args": ["-y", "hostkey-mcp-server-ru"],
