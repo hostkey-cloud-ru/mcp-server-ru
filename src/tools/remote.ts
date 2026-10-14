@@ -5,7 +5,7 @@ import { registerRead, registerAction } from "./helpers.js";
 
 const idField = { id: z.number().int().describe("ID сервера") };
 
-/** IPMI/NAT, консоль, post-install, Remote Hands (jira.php). */
+/** IPMI/NAT, console, post-install tasks, Remote Hands (jira.php). */
 export function registerRemoteTools(
   server: McpServer,
   client: InvApiClient,
@@ -140,7 +140,7 @@ export function registerRemoteTools(
     idField,
   );
 
-  // Тикеты Remote Hands (jira.php)
+  // Remote Hands tickets (jira.php)
   const rhrNote =
     " Создаёт тикет Remote Hands для дежурной смены дата-центра; статус и переписка — в тикете (ссылка придёт на email).";
 

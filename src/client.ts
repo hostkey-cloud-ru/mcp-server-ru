@@ -1,11 +1,11 @@
-/** HTTP-клиент Hostkey InvAPI. */
+/** HTTP client for Hostkey InvAPI. */
 
 export interface InvApiClientOptions {
-  /** API-ключ InvAPI. */
+  /** InvAPI key (account-wide or per-server). */
   apiKey: string;
-  /** TTL сессии в секундах (по умолчанию 3600). */
+  /** Session token TTL in seconds (default 3600). */
   tokenTtlSeconds?: number;
-  /** HTTP-таймаут в секундах (по умолчанию 60). */
+  /** HTTP timeout in seconds (default 60). */
   httpTimeoutSeconds?: number;
 }
 
@@ -20,7 +20,7 @@ export class InvApiError extends Error {
   }
 }
 
-/** Endpoint .ru зашит. Для .com — пакет hostkey-mcp-server. */
+/** Hardcoded .ru endpoint. Use hostkey-mcp-server for .com. */
 const INVAPI_BASE_URL = "https://invapi.hostkey.ru";
 const DEFAULT_TOKEN_TTL = 3600;
 const DEFAULT_HTTP_TIMEOUT = 60;
@@ -33,7 +33,7 @@ const SECRET_KEYS = new Set([
   "api_key",
 ]);
 
-/** Прячем секреты в ответах/логах. */
+/** Hide secrets in logged/returned payloads. */
 export function maskSecrets(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(maskSecrets);
   if (value && typeof value === "object") {
@@ -47,7 +47,7 @@ export function maskSecrets(value: unknown): unknown {
   return value;
 }
 
-/** Разворачиваем вложенные объекты в form-поля InvAPI. */
+/** Flatten nested objects for InvAPI form-urlencoded fields. */
 function flattenFields(
   fields: Record<string, unknown>,
 ): Array<[string, string]> {
@@ -69,11 +69,20 @@ function flattenFields(
   return pairs;
 }
 
+function looksLikePdf(buf: Buffer, contentType: string): boolean {
+  if (contentType.includes("application/pdf")) return true;
+  if (buf.length >= 5 && buf.subarray(0, 5).toString("latin1") === "%PDF-")
+    return true;
+  return false;
+}
+
 interface CallOptions {
-  /** Подставлять сессионный токен (по умолчанию да). */
+  /** Attach session token (default true). */
   auth?: boolean;
-  /** Внутреннее: не зацикливать relogin. */
+  /** Internal: avoid infinite relogin loops. */
   retried?: boolean;
+  /** Optional abort from MCP request cancellation. */
+  signal?: AbortSignal;
 }
 
 export class InvApiClient {
@@ -89,7 +98,7 @@ export class InvApiClient {
   constructor(options: InvApiClientOptions) {
     if (!options.apiKey) {
       throw new InvApiError(
-        "Не задан HOSTKEY_API_KEY. Создайте ключ в InvAPI и передайте через окружение.",
+        "HOSTKEY_API_KEY is missing. Create a key in InvAPI and set it in the environment.",
       );
     }
     this.apiKey = options.apiKey;
@@ -98,19 +107,23 @@ export class InvApiClient {
     this.httpTimeout = options.httpTimeoutSeconds ?? DEFAULT_HTTP_TIMEOUT;
   }
 
-  private async ensureToken(): Promise<string> {
-    // Обновляем за минуту до истечения.
+  private async ensureToken(signal?: AbortSignal): Promise<string> {
+    // Refresh a minute early so we don't hit expiry mid-request.
     if (this.token && Date.now() < this.tokenExpiresAtMs - 60_000)
       return this.token;
 
-    const res = (await this.rawPost("auth", {
-      action: "login",
-      key: this.apiKey,
-      ttl: this.tokenTtl,
-      fix_ip: 0, // не привязывать токен к IP
-    })) as Record<string, unknown>;
+    const res = (await this.rawPost(
+      "auth",
+      {
+        action: "login",
+        key: this.apiKey,
+        ttl: this.tokenTtl,
+        fix_ip: 0, // don't pin the token to one IP
+      },
+      signal,
+    )) as Record<string, unknown>;
 
-    // Токен в result.token; плоские token/scope — запасной вариант.
+    // Token lives under result.token; flat token/scope is a fallback.
     const nested =
       res.result && typeof res.result === "object"
         ? (res.result as Record<string, unknown>)
@@ -118,7 +131,7 @@ export class InvApiClient {
     const token = nested?.token ?? nested?.scope ?? res.token ?? res.scope;
     if (typeof token !== "string" || token.length === 0) {
       throw new InvApiError(
-        "auth/login не вернул сессионный токен",
+        "auth/login did not return a session token",
         undefined,
         maskSecrets(res),
       );
@@ -138,6 +151,7 @@ export class InvApiClient {
   private async rawPost(
     resource: string,
     fields: Record<string, unknown>,
+    outerSignal?: AbortSignal,
   ): Promise<unknown> {
     const url = `${this.baseUrl}/${resource}.php`;
     const body = new URLSearchParams();
@@ -145,6 +159,12 @@ export class InvApiClient {
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.httpTimeout * 1000);
+    const onOuterAbort = () => controller.abort();
+    if (outerSignal) {
+      if (outerSignal.aborted) controller.abort();
+      else outerSignal.addEventListener("abort", onOuterAbort, { once: true });
+    }
+
     let res: Response;
     try {
       res = await fetch(url, {
@@ -156,20 +176,48 @@ export class InvApiClient {
     } catch (e) {
       const reason =
         e instanceof Error && e.name === "AbortError"
-          ? `таймаут ${this.httpTimeout}s`
+          ? outerSignal?.aborted
+            ? "cancelled"
+            : `timeout ${this.httpTimeout}s`
           : String(e);
-      throw new InvApiError(`InvAPI ${resource}: сетевая ошибка (${reason})`);
+      throw new InvApiError(`InvAPI ${resource}: network error (${reason})`);
     } finally {
       clearTimeout(timer);
+      outerSignal?.removeEventListener("abort", onOuterAbort);
     }
 
-    const text = await res.text();
+    const buf = Buffer.from(await res.arrayBuffer());
+    const contentType = (res.headers.get("content-type") ?? "").toLowerCase();
+
+    // Binary PDF (e.g. whmcs/download_invoice) — HTTP 200 with %PDF body.
+    if (res.ok && looksLikePdf(buf, contentType)) {
+      return {
+        result: "OK",
+        content_type: "application/pdf",
+        encoding: "base64",
+        byte_length: buf.length,
+        data: buf.toString("base64"),
+        note: "PDF as base64. Decode and save as .pdf.",
+      };
+    }
+
+    const text = buf.toString("utf8");
     let json: unknown;
     try {
       json = JSON.parse(text);
     } catch {
+      if (res.ok) {
+        // HTML/plain success bodies (misconfigured actions historically returned HTML).
+        return {
+          result: "OK",
+          content_type: contentType || "text/plain",
+          encoding: "text",
+          data: text,
+          note: "InvAPI returned a non-JSON body; raw text included.",
+        };
+      }
       throw new InvApiError(
-        `InvAPI ${resource}: HTTP ${res.status}, не JSON: ${text.slice(0, 300)}`,
+        `InvAPI ${resource}: HTTP ${res.status}, non-JSON: ${text.slice(0, 300)}`,
         res.status,
       );
     }
@@ -187,7 +235,7 @@ export class InvApiClient {
     return json;
   }
 
-  /** Вызов InvAPI. При 401 один раз перелогинивается. */
+  /** Call InvAPI. Relogins once on 401 / invalid token. */
   async call(
     resource: string,
     action: string,
@@ -196,10 +244,10 @@ export class InvApiClient {
   ): Promise<unknown> {
     const auth = opts.auth ?? true;
     const fields: Record<string, unknown> = { action, ...params };
-    if (auth) fields.token = await this.ensureToken();
+    if (auth) fields.token = await this.ensureToken(opts.signal);
 
     try {
-      const res = await this.rawPost(resource, fields);
+      const res = await this.rawPost(resource, fields, opts.signal);
       if (
         res &&
         typeof res === "object" &&
@@ -225,20 +273,20 @@ export class InvApiClient {
     }
   }
 
-  /** Один раз за токен обновляем список серверов перед eq/list|show. */
+  /** Refresh inventory once per token before eq/list or eq/show. */
   async ensureServersRefreshed(): Promise<void> {
     if (this.serversRefreshed) return;
     await this.call("eq", "update_servers");
     this.serversRefreshed = true;
   }
 
-  /** Статус async-задачи по callback (без авторизации). */
-  async checkTask(callbackKey: string): Promise<unknown> {
+  /** Check async job status by callback key (no auth). */
+  async checkTask(callbackKey: string, signal?: AbortSignal): Promise<unknown> {
     return this.call(
       "eq_callback",
       "check",
       { key: callbackKey },
-      { auth: false },
+      { auth: false, signal },
     );
   }
 }

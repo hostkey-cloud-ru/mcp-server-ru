@@ -3,7 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { InvApiClient } from "../client.js";
 import { registerRead, registerAction } from "./helpers.js";
 
-/** ISO-образы (iso.php). */
+/** ISO images (iso.php). */
 export function registerIsoTools(
   server: McpServer,
   client: InvApiClient,
@@ -12,15 +12,11 @@ export function registerIsoTools(
     server,
     client,
     "list_iso_images",
-    "Список доступных ISO-образов (iso/list_iso). Для клиентских ключей обязателен server_id — образы подбираются под конкретный сервер.",
+    "Список доступных ISO-образов (iso/list_iso). InvAPI требует id сервера (для клиентских ключей); образы подбираются под конфигурацию сервера.",
     "iso",
     "list_iso",
     {
-      server_id: z
-        .number()
-        .int()
-        .optional()
-        .describe("ID сервера (обязателен для клиентских ключей)"),
+      id: z.number().int().describe("ID сервера в InvAPI (обязателен)"),
     },
   );
 

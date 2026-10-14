@@ -3,7 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { InvApiClient } from "../client.js";
 import { ok, fail } from "./helpers.js";
 
-/** Серверы и теги (eq, tags). */
+/** Server list/details and tags (eq, tags). */
 export function registerServerTools(
   server: McpServer,
   client: InvApiClient,
@@ -119,13 +119,13 @@ export function registerServerTools(
     "search_servers_by_tag",
     {
       description:
-        "Поиск серверов по имени или значению тега (tags/user_search). Возвращает ID серверов.",
+        "Поиск серверов по имени или значению тега (tags/search_user). Возвращает ID серверов.",
       inputSchema: { value: z.string().describe("Шаблон поиска по тегам") },
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
     async ({ value }) => {
       try {
-        return ok(await client.call("tags", "user_search", { value }));
+        return ok(await client.call("tags", "search_user", { value }));
       } catch (e) {
         return fail(e);
       }

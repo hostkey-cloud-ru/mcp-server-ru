@@ -3,7 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { InvApiClient } from "../client.js";
 import { registerRead, registerAction } from "./helpers.js";
 
-/** Биллинг (whmcs.php). Платные и отмены — с confirm; часть ещё с HOSTKEY_ALLOW_DESTRUCTIVE. */
+/** Billing (whmcs.php). Paid ops and cancellations need confirm; some also need HOSTKEY_ALLOW_DESTRUCTIVE. */
 export function registerBillingTools(
   server: McpServer,
   client: InvApiClient,
@@ -97,7 +97,7 @@ export function registerBillingTools(
     server,
     client,
     "download_invoice",
-    "Скачать инвойс в PDF (whmcs/download_invoice). Ответ обычно содержит PDF в Base64 — сохраните и декодируйте при необходимости.",
+    "Скачать инвойс в PDF (whmcs/download_invoice). InvAPI отдаёт бинарный PDF; MCP возвращает JSON с encoding=base64 и data — декодируйте в .pdf.",
     "whmcs",
     "download_invoice",
     { invoice_id: z.number().int().describe("Номер инвойса") },
@@ -122,7 +122,6 @@ export function registerBillingTools(
     "get_contacts",
   );
 
-  // --- Запись ---
   registerAction(
     server,
     client,

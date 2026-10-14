@@ -6,7 +6,7 @@ import { registerRead, registerAction } from "./helpers.js";
 const idField = { id: z.number().int().describe("ID сервера") };
 const ipField = { ip: z.string().describe("IP-адрес") };
 
-/** Сеть: порты, графики, блокировки IP, PTR. */
+/** Network: ports, graphs, IP blocks, PTR (net.php, ip.php). */
 export function registerNetworkTools(
   server: McpServer,
   client: InvApiClient,

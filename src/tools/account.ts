@@ -3,7 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { InvApiClient } from "../client.js";
 import { ok, fail, registerRead, registerAction } from "./helpers.js";
 
-/** Аккаунт, logout, API-ключи. */
+/** Account info, logout, API keys. */
 export function registerAccountTools(
   server: McpServer,
   client: InvApiClient,

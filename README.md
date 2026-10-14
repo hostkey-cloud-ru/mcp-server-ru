@@ -1,8 +1,8 @@
 # Hostkey MCP Server (RU)
 
 MCP-сервер для [Hostkey](https://hostkey.ru/) (портал **.ru**, InvAPI `invapi.hostkey.ru`).
-Клиент запускает сервер локально по stdio — из Cursor, VS Code и других MCP-клиентов.
-Удалённый endpoint: `https://mcp.hostkey.ru/mcp` (для облачных агентов).
+Клиент подключается по URL или локально по stdio (Cursor, VS Code и др.).
+Hosted: `https://mcp.hostkey.ru/mcp` (для .com — `https://mcp.hostkey.com/mcp`).
 
 | | |
 |---|---|
@@ -24,39 +24,50 @@ MCP-сервер для [Hostkey](https://hostkey.ru/) (портал **.ru**, In
 
 ## 2. Установка
 
-### Cursor
+### Cursor (hosted URL — рекомендуется)
 
-[![Install in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=hostkey-mcp-server-ru&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsImhvc3RrZXktbWNwLXNlcnZlci1ydSJdLCJlbnYiOnsiSE9TVEtFWV9BUElfS0VZIjoiWU9VUl9BUElfS0VZIn19)
-
-Нажми кнопку, подставь свой InvAPI-ключ вместо `YOUR_API_KEY`, подтверди.
-
-Или вручную в `.cursor/mcp.json`:
+В `.cursor/mcp.json` (один или оба портала):
 
 ```json
 {
   "mcpServers": {
-    "hostkey-mcp-server-ru": {
-      "command": "npx",
-      "args": ["-y", "hostkey-mcp-server-ru"],
-      "env": {
-        "HOSTKEY_API_KEY": "your-api-key"
+    "hostkey-com": {
+      "url": "https://mcp.hostkey.com/mcp",
+      "headers": {
+        "Authorization": "Bearer key-from-invapi.hostkey.com"
+      }
+    },
+    "hostkey-ru": {
+      "url": "https://mcp.hostkey.ru/mcp",
+      "headers": {
+        "Authorization": "Bearer key-from-invapi.hostkey.ru"
       }
     }
   }
 }
 ```
 
-### Remote (облачные агенты)
+Подставь свои InvAPI-ключи. Локальный Node/`npx` не нужен.
 
-Без локального Node/`npx`. URL сервиса + InvAPI-ключ:
+### Cursor (локальный npx / stdio)
+
+[![Install in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=hostkey-mcp-server-ru&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsImhvc3RrZXktbWNwLXNlcnZlci1ydSJdLCJlbnYiOnsiSE9TVEtFWV9BUElfS0VZIjoiWU9VUl9BUElfS0VZIn19)
 
 ```json
 {
   "mcpServers": {
-    "hostkey": {
-      "url": "https://mcp.hostkey.ru/mcp",
-      "headers": {
-        "Authorization": "Bearer your-api-key"
+    "hostkey-com": {
+      "command": "npx",
+      "args": ["-y", "hostkey-mcp-server"],
+      "env": {
+        "HOSTKEY_API_KEY": "key-from-invapi.hostkey.com"
+      }
+    },
+    "hostkey-ru": {
+      "command": "npx",
+      "args": ["-y", "hostkey-mcp-server-ru"],
+      "env": {
+        "HOSTKEY_API_KEY": "key-from-invapi.hostkey.ru"
       }
     }
   }
@@ -65,26 +76,12 @@ MCP-сервер для [Hostkey](https://hostkey.ru/) (портал **.ru**, In
 
 ### VS Code
 
-`.vscode/mcp.json`:
+`.vscode/mcp.json` — те же варианты (`url` + `headers` или `command` / `args` / `env`).
 
-```json
-{
-  "mcp.servers": {
-    "hostkey-mcp-server-ru": {
-      "command": "npx",
-      "args": ["-y", "hostkey-mcp-server-ru"],
-      "env": {
-        "HOSTKEY_API_KEY": "your-api-key"
-      }
-    }
-  }
-}
-```
-
-Опционально: `HOSTKEY_TOKEN_TTL`, `HOSTKEY_HTTP_TIMEOUT`, `HOSTKEY_ALLOW_DESTRUCTIVE`
+Опционально для stdio: `HOSTKEY_TOKEN_TTL`, `HOSTKEY_HTTP_TIMEOUT`, `HOSTKEY_ALLOW_DESTRUCTIVE`
 (см. `.env.example`).
 
-Из исходников (Node.js ≥ 20): `npm install && npm run build`.
+Из исходников (Node.js ≥ 22.18): `npm install && npm run build`.
 
 ## 3. Подтверждение опасных операций
 

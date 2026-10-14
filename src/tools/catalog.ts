@@ -7,7 +7,7 @@ const locationParam = z
   .string()
   .describe("Локация: NL/US/FI/DE/IS/TR/UK/ES/IT/PL/CH");
 
-/** Каталог: пресеты, stock, ОС, ПО, трафик-планы. */
+/** Catalog: presets, stock, OS, software, traffic plans. */
 export function registerCatalogTools(
   server: McpServer,
   client: InvApiClient,

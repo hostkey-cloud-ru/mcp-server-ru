@@ -1,8 +1,8 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.hostkey-cloud-ru/mcp-server-ru",
-  "description": "MCP-сервер Hostkey .ru (InvAPI): серверы, питание, заказ, DNS, S3, биллинг",
-  "version": "1.0.2",
+  "description": "MCP server for Hostkey .ru (InvAPI): servers, power, order, DNS, S3, billing",
+  "version": "1.0.3",
   "repository": {
     "url": "https://github.com/hostkey-cloud-ru/mcp-server-ru",
     "source": "github"
@@ -14,7 +14,7 @@
       "headers": [
         {
           "name": "Authorization",
-          "description": "Bearer <InvAPI API key> для портала .ru (invapi.hostkey.ru)",
+          "description": "Bearer <InvAPI API key> for the .ru portal (invapi.hostkey.ru)",
           "isRequired": true,
           "isSecret": true
         }
@@ -25,7 +25,7 @@
     {
       "registryType": "npm",
       "identifier": "hostkey-mcp-server-ru",
-      "version": "1.0.1",
+      "version": "1.0.3",
       "transport": {
         "type": "stdio"
       },

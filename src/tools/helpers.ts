@@ -22,7 +22,7 @@ export function fail(e: unknown): ToolResult {
   const message = e instanceof Error ? e.message : String(e);
   return {
     isError: true,
-    content: [{ type: "text", text: `Ошибка: ${message}` }],
+    content: [{ type: "text", text: `Error: ${message}` }],
   };
 }
 
@@ -33,7 +33,7 @@ export function note(message: string): ToolResult {
 export const confirmField = {
   confirm: z
     .boolean()
-    .describe("Нужно true, чтобы выполнить операцию."),
+    .describe("Must be true to run the operation."),
 };
 
 type Schema = Record<string, z.ZodTypeAny>;
@@ -46,11 +46,11 @@ function withAsyncHint(res: unknown): string {
   const callback = (res as Record<string, unknown> | null)?.callback;
   const base = JSON.stringify(maskSecrets(res), null, 2);
   return typeof callback === "string"
-    ? `${base}\n\nАсинхронная задача. Callback: ${callback}. Смотри статус через check_task.`
+    ? `${base}\n\nAsync job. Callback: ${callback}. Track with check_task.`
     : base;
 }
 
-/** Read-only инструмент поверх InvAPI. */
+/** Register a read-only InvAPI tool. */
 export function registerRead(
   server: McpServer,
   client: InvApiClient,
@@ -77,7 +77,7 @@ export function registerRead(
   );
 }
 
-/** Write-инструмент. Нужен confirm=true; envGuard — ещё HOSTKEY_ALLOW_DESTRUCTIVE. */
+/** Register a write tool. Needs confirm=true; set envGuard for HOSTKEY_ALLOW_DESTRUCTIVE. */
 export function registerAction(
   server: McpServer,
   client: InvApiClient,
@@ -102,13 +102,13 @@ export function registerAction(
     async (rawArgs) => {
       if (opts.envGuard && process.env.HOSTKEY_ALLOW_DESTRUCTIVE !== "1") {
         return note(
-          `${name} отключён. Поставьте HOSTKEY_ALLOW_DESTRUCTIVE=1, чтобы разрешить.`,
+          `${name} is disabled. Set HOSTKEY_ALLOW_DESTRUCTIVE=1 to allow it.`,
         );
       }
       const { confirm, ...rest } = rawArgs as Params & { confirm: boolean };
       if (confirm !== true) {
         return note(
-          `${name} не выполнен. Повторите с confirm=true, если пользователь согласен.`,
+          `${name} was not run. Call again with confirm=true if the user agrees.`,
         );
       }
       try {
