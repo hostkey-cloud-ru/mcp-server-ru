@@ -1,4 +1,4 @@
-/** Hostkey MCP server (.ru / invapi.hostkey.ru). Env: see .env.example. */
+﻿/** Hostkey MCP server (.ru / invapi.hostkey.ru). Env: see .env.example. */
 import { createHash } from "node:crypto";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -25,7 +25,7 @@ import { registerRawTool } from "./tools/raw.js";
 import { registerPrompts } from "./prompts.js";
 
 const SERVER_NAME = "hostkey-mcp-server-ru";
-const SERVER_VERSION = "1.0.3";
+const SERVER_VERSION = "1.0.4";
 const HOSTED_MCP_URL = "https://mcp.hostkey.ru/mcp";
 const SERVER_DESCRIPTION =
   "MCP server for Hostkey .ru portal (InvAPI invapi.hostkey.ru): servers, power, ordering, reinstall, DNS, S3, billing";
@@ -78,7 +78,7 @@ function createServer(apiKey: string): McpServer {
     {
       instructions:
         "Hostkey InvAPI (.ru). Write calls need confirm=true; destructive ones also need HOSTKEY_ALLOW_DESTRUCTIVE=1. " +
-        "Async jobs return a callback — use check_task. Prefer typed tools; otherwise call_api_raw. " +
+        "Async jobs return a callback вЂ” use check_task. Prefer typed tools; otherwise call_api_raw. " +
         "Prompts: order_server_prompt, reinstall_server_prompt, troubleshoot_server_prompt.",
     },
   );
@@ -306,3 +306,4 @@ if ((process.env.MODE ?? "stdio").toLowerCase() === "http") {
 } else {
   await startStdio();
 }
+
