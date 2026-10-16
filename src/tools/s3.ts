@@ -3,13 +3,30 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { InvApiClient } from "../client.js";
 import { registerRead, registerAction } from "./helpers.js";
 
-const accountField = {
-  account_id: z
-    .number()
-    .int()
-    .optional()
-    .describe("ID S3-аккаунта (если требуется; уточняйте через s3_get_users)"),
+/** InvAPI expects `s3uid` (string or numeric id from s3_get_users / create). */
+const s3uidSchema = z
+  .union([z.string(), z.number()])
+  .describe(
+    "S3 account UID (s3uid) from s3_get_users or create_account/order. Numeric id (e.g. 13457) or string uid.",
+  );
+
+const s3uidRequired = { s3uid: s3uidSchema };
+const s3uidOptional = {
+  s3uid: s3uidSchema.optional().describe(
+    "S3 account UID; omit only if the token is bound to a single S3 account",
+  ),
 };
+
+/** Compat: older clients sent account_id — map to s3uid. */
+function mapS3Account(args: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...args };
+  if (out.s3uid == null && out.account_id != null) {
+    out.s3uid = out.account_id;
+  }
+  delete out.account_id;
+  if (out.s3uid != null) out.s3uid = String(out.s3uid);
+  return out;
+}
 
 /** S3 storage (s3.php). create_order is paid; some deletes need HOSTKEY_ALLOW_DESTRUCTIVE. */
 export function registerS3Tools(server: McpServer, client: InvApiClient): void {
@@ -17,14 +34,14 @@ export function registerS3Tools(server: McpServer, client: InvApiClient): void {
     server,
     client,
     "s3_list_plans",
-    "Список доступных тарифных планов S3-хранилища (s3/list_plans).",
+    "List available S3 storage plans (s3/list_plans).",
     "s3",
     "list_plans",
     {
       location: z
         .string()
         .optional()
-        .describe("Локация (фильтр), если поддерживается"),
+        .describe("Location (filter), if supported"),
     },
   );
 
@@ -32,59 +49,78 @@ export function registerS3Tools(server: McpServer, client: InvApiClient): void {
     server,
     client,
     "s3_get_locations",
-    "Список доступных локаций для S3 (s3/get_available_locations).",
+    "List available locations for S3 (s3/get_available_locations).",
     "s3",
     "get_available_locations",
   );
 
+  // Live InvAPI returns "invalid command" for action=get_buckets; use get_buckets_rmq.
   registerRead(
     server,
     client,
     "s3_get_buckets",
-    "Список бакетов S3-аккаунта и статистика использования через AWS API (s3/get_buckets).",
+    "List S3 account buckets and usage (s3/get_buckets_rmq). Pass s3uid from s3_get_users. May return a task key — then track with check_task. (Note: s3/get_buckets is not available on current InvAPI.)",
     "s3",
-    "get_buckets",
-    accountField,
+    "get_buckets_rmq",
+    {
+      ...s3uidRequired,
+      account_id: z
+        .number()
+        .int()
+        .optional()
+        .describe("Deprecated alias for s3uid; prefer s3uid"),
+    },
+    { map: mapS3Account },
   );
 
   registerRead(
     server,
     client,
     "s3_get_buckets_via_queue",
-    "Список бакетов, статистика и ключи доступа через очередь задач (s3/get_buckets_rmq). Может вернуть ключ задачи — тогда статус через check_task.",
+    "Same as s3_get_buckets: list buckets via s3/get_buckets_rmq. Prefer s3_get_buckets.",
     "s3",
     "get_buckets_rmq",
-    accountField,
+    {
+      ...s3uidRequired,
+      account_id: z
+        .number()
+        .int()
+        .optional()
+        .describe("Deprecated alias for s3uid; prefer s3uid"),
+    },
+    { map: mapS3Account },
   );
 
   registerRead(
     server,
     client,
     "s3_get_files",
-    "Список файлов в бакете с пагинацией и поиском (s3/get_files).",
+    "List files in a bucket with pagination and search (s3/get_files).",
     "s3",
     "get_files",
     {
-      bucket: z.string().describe("Имя бакета"),
-      page: z.number().int().optional().describe("Номер страницы"),
-      limit: z.number().int().optional().describe("Размер страницы"),
-      search: z.string().optional().describe("Поисковая строка по имени файла"),
-      ...accountField,
+      bucket: z.string().describe("Bucket name"),
+      page: z.number().int().optional().describe("Page number"),
+      limit: z.number().int().optional().describe("Page size"),
+      search: z.string().optional().describe("Search string by file name"),
+      ...s3uidOptional,
+      account_id: z.number().int().optional().describe("Deprecated alias for s3uid"),
     },
+    { map: mapS3Account },
   );
 
   registerRead(
     server,
     client,
     "s3_get_users",
-    "Список пользователей S3 с информацией о сервисе, трафике и использовании хранилища (s3/get_users). Полная фильтрация доступна администраторам.",
+    "List S3 users with service, traffic, and storage usage info (s3/get_users). Full filtering is available to administrators. Use returned s3uid/id with s3_get_buckets.",
     "s3",
     "get_users",
     {
       location: z
         .string()
         .optional()
-        .describe("Фильтр по локации (для администраторов)"),
+        .describe("Filter by location (for administrators)"),
     },
   );
 
@@ -92,29 +128,31 @@ export function registerS3Tools(server: McpServer, client: InvApiClient): void {
     server,
     client,
     "s3_show_key",
-    "Получить расшифрованный ключ доступа S3 (s3/show_key). СЕКРЕТ: не логировать и не передавать третьим лицам.",
+    "Get a decrypted S3 access key (s3/show_key). SECRET: do not log or share with third parties.",
     "s3",
     "show_key",
     {
-      key_type: z.enum(["access_key", "secret_key"]).describe("Тип ключа"),
-      ...accountField,
+      key_type: z.enum(["access_key", "secret_key"]).describe("Key type"),
+      ...s3uidOptional,
+      account_id: z.number().int().optional().describe("Deprecated alias for s3uid"),
     },
+    { map: mapS3Account },
   );
 
   registerAction(
     server,
     client,
     "s3_create_account",
-    "Создать S3-аккаунт: привязка тарифного плана и начального бакета (s3/create_account). Требует авторизации.",
+    "Create an S3 account: bind a plan and initial bucket (s3/create_account). Requires authentication.",
     "s3",
     "create_account",
     {
       plan_id: z
         .union([z.number().int(), z.string()])
         .optional()
-        .describe("ID тарифного плана из s3_list_plans"),
-      location: z.string().optional().describe("Локация из s3_get_locations"),
-      bucket: z.string().optional().describe("Имя начального бакета"),
+        .describe("Plan ID from s3_list_plans"),
+      location: z.string().optional().describe("Location from s3_get_locations"),
+      bucket: z.string().optional().describe("Initial bucket name"),
     },
   );
 
@@ -122,28 +160,30 @@ export function registerS3Tools(server: McpServer, client: InvApiClient): void {
     server,
     client,
     "s3_create_bucket",
-    "Создать новый бакет в существующем S3-аккаунте (s3/create_bucket).",
+    "Create a new bucket in an existing S3 account (s3/create_bucket).",
     "s3",
     "create_bucket",
     {
-      bucket: z.string().describe("Имя бакета"),
-      ...accountField,
+      bucket: z.string().describe("Bucket name"),
+      ...s3uidOptional,
+      account_id: z.number().int().optional().describe("Deprecated alias for s3uid"),
     },
+    { map: mapS3Account },
   );
 
   registerAction(
     server,
     client,
     "s3_create_order",
-    "Создать платный заказ на S3-хранилище с привязкой к биллингу (s3/create_order). ДЕНЬГИ: создаёт реальный заказ/инвойс.",
+    "Create a paid S3 storage order linked to billing (s3/create_order). MONEY: creates a real order/invoice.",
     "s3",
     "create_order",
     {
       plan_id: z
         .union([z.number().int(), z.string()])
         .optional()
-        .describe("ID тарифного плана"),
-      location: z.string().optional().describe("Локация"),
+        .describe("Plan ID"),
+      location: z.string().optional().describe("Location"),
     },
   );
 
@@ -151,70 +191,86 @@ export function registerS3Tools(server: McpServer, client: InvApiClient): void {
     server,
     client,
     "s3_delete_file",
-    "Удалить файл из бакета (s3/delete_file). ДЕСТРУКТИВНО: файл удаляется безвозвратно.",
+    "Delete a file from a bucket (s3/delete_file). DESTRUCTIVE: the file is permanently deleted.",
     "s3",
     "delete_file",
     {
-      bucket: z.string().describe("Имя бакета"),
-      file: z.string().describe("Ключ (имя) файла"),
-      ...accountField,
+      bucket: z.string().describe("Bucket name"),
+      file: z.string().describe("File key (name)"),
+      ...s3uidOptional,
+      account_id: z.number().int().optional().describe("Deprecated alias for s3uid"),
     },
-    { destructive: true },
+    { destructive: true, map: mapS3Account },
   );
 
   registerAction(
     server,
     client,
     "s3_delete_bucket",
-    "Удалить бакет из S3-аккаунта (s3/delete_bucket). ДЕСТРУКТИВНО: все файлы бакета будут удалены.",
+    "Delete a bucket from an S3 account (s3/delete_bucket). DESTRUCTIVE: all files in the bucket will be deleted.",
     "s3",
     "delete_bucket",
     {
-      bucket: z.string().describe("Имя бакета"),
-      ...accountField,
+      bucket: z.string().describe("Bucket name"),
+      ...s3uidOptional,
+      account_id: z.number().int().optional().describe("Deprecated alias for s3uid"),
     },
-    { destructive: true },
+    { destructive: true, map: mapS3Account },
   );
 
   registerAction(
     server,
     client,
     "s3_delete_account",
-    "Полностью удалить S3-аккаунт пользователя (s3/delete_account). ДЕСТРУКТИВНО: все бакеты и данные будут удалены. Требует HOSTKEY_ALLOW_DESTRUCTIVE=1.",
+    "Fully delete a user's S3 account (s3/delete_account). DESTRUCTIVE: all buckets and data will be deleted. Requires HOSTKEY_ALLOW_DESTRUCTIVE=1.",
     "s3",
     "delete_account",
-    accountField,
-    { destructive: true, envGuard: true },
+    {
+      ...s3uidOptional,
+      account_id: z.number().int().optional().describe("Deprecated alias for s3uid"),
+    },
+    { destructive: true, envGuard: true, map: mapS3Account },
   );
 
   registerAction(
     server,
     client,
     "s3_delete_payment_account",
-    "Инициировать удаление S3-аккаунта через отмену сервиса в биллинге (s3/delete_payment_account). ДЕСТРУКТИВНО: активному сервису будет установлена дата завершения. Требует HOSTKEY_ALLOW_DESTRUCTIVE=1.",
+    "Initiate S3 account deletion via service cancellation in billing (s3/delete_payment_account). DESTRUCTIVE: an end date will be set on the active service. Requires HOSTKEY_ALLOW_DESTRUCTIVE=1.",
     "s3",
     "delete_payment_account",
-    accountField,
-    { destructive: true, envGuard: true },
+    {
+      ...s3uidOptional,
+      account_id: z.number().int().optional().describe("Deprecated alias for s3uid"),
+    },
+    { destructive: true, envGuard: true, map: mapS3Account },
   );
 
   registerAction(
     server,
     client,
     "s3_cancel_account_deletion",
-    "Отменить процесс удаления S3-сервиса, инициированный через биллинг, и восстановить активный статус аккаунта (s3/cancel_payment_account_deletion).",
+    "Cancel S3 service deletion initiated via billing and restore the account to active status (s3/cancel_payment_account_deletion).",
     "s3",
     "cancel_payment_account_deletion",
-    accountField,
+    {
+      ...s3uidOptional,
+      account_id: z.number().int().optional().describe("Deprecated alias for s3uid"),
+    },
+    { map: mapS3Account },
   );
 
   registerAction(
     server,
     client,
     "s3_update_traffic_info",
-    "Обновить информацию о трафике S3-аккаунта (s3/update_traffic_info). Доступно только администраторам.",
+    "Update S3 account traffic information (s3/update_traffic_info). Available to administrators only.",
     "s3",
     "update_traffic_info",
-    accountField,
+    {
+      ...s3uidOptional,
+      account_id: z.number().int().optional().describe("Deprecated alias for s3uid"),
+    },
+    { map: mapS3Account },
   );
 }
