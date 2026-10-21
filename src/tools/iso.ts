@@ -60,20 +60,39 @@ export function registerIsoTools(
     client,
     "mount_iso",
     "Смонтировать ISO-образ на сервер (iso/mount_iso). Асинхронная операция — вернётся callback-ключ для check_task. " +
-      "ID/имя образа возьмите из list_iso_images или get_uploaded_isos.",
+      "InvAPI ждёт поле `iso` (имя или id). Можно передать iso, либо алиасы name / iso_id.",
     "iso",
     "mount_iso",
     {
       id: z.number().int().describe("ID сервера"),
+      iso: z
+        .union([z.string(), z.number()])
+        .optional()
+        .describe("Имя или id ISO (поле InvAPI `iso`)"),
       iso_id: z
         .number()
         .int()
         .optional()
-        .describe("ID образа из list_iso_images"),
+        .describe("Алиас: ID из list_iso_images → iso"),
       name: z
         .string()
         .optional()
-        .describe("Имя образа (если используется идентификация по имени)"),
+        .describe("Алиас: имя / iso_name → iso"),
+    },
+    {
+      map: (args) => {
+        const out: Record<string, unknown> = { ...args };
+        const iso = out.iso ?? out.name ?? out.iso_id;
+        delete out.name;
+        delete out.iso_id;
+        if (iso == null || String(iso).trim() === "") {
+          throw new Error(
+            "Укажите iso (InvAPI) или name / iso_id из list_iso_images",
+          );
+        }
+        out.iso = String(iso);
+        return out;
+      },
     },
   );
 
