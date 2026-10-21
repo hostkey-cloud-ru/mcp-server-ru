@@ -3,13 +3,20 @@ name: Publish
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      registry_only:
+        description: "Пропустить npm; только server.json → MCP Registry (после ручного npm publish)"
+        type: boolean
+        default: false
 
 permissions:
-  id-token: write # OIDC для npm Trusted Publishing
+  id-token: write # OIDC для npm Trusted Publishing + mcp-publisher github-oidc
   contents: read
 
 jobs:
   npm:
+    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.registry_only == false)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,3 +43,48 @@ jobs:
       #   Workflow filename: publish.yml
       #   Allowed actions: включить "npm publish" (не только stage)
       - run: npm publish --access public --provenance
+
+  mcp-registry:
+    # После npm (release) или отдельно: Actions → Publish → registry_only.
+    # Registry сверяет packages[].version с уже опубликованным npm.
+    needs: npm
+    if: |
+      always() && (
+        needs.npm.result == 'success' ||
+        (github.event_name == 'workflow_dispatch' && inputs.registry_only == true)
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Wait until npm serves this version
+        run: |
+          set -euo pipefail
+          PKG=$(jq -r '.packages[0].identifier' server.json)
+          VER=$(jq -r '.version' server.json)
+          echo "Waiting for $PKG@$VER on npm…"
+          for i in $(seq 1 36); do
+            if npm view "$PKG@$VER" version >/dev/null 2>&1; then
+              echo "Found $PKG@$VER"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::$PKG@$VER not visible on npm after ~3m"
+          exit 1
+
+      - name: Install mcp-publisher
+        run: |
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" \
+            | tar xz mcp-publisher
+
+      # io.github.<owner>/<repo> → GitHub OIDC, без PAT.
+      - name: Authenticate to MCP Registry
+        run: ./mcp-publisher login github-oidc
+
+      - name: Publish server.json to MCP Registry
+        run: ./mcp-publisher publish
