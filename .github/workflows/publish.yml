@@ -5,7 +5,7 @@ on:
     types: [published]
 
 permissions:
-  id-token: write # OIDC для npm Trusted Publishing (provenance)
+  id-token: write # OIDC для npm Trusted Publishing
   contents: read
 
 jobs:
@@ -13,15 +13,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # Не ставить registry-url: иначе .npmrc с NODE_AUTH_TOKEN и npm
-      # пропускает OIDC Trusted Publishing (403 OIDC permission denied).
+
+      # Node 24 + свежий npm (>= 11.5.1) нужны для Trusted Publishing / OIDC.
+      # registry-url — по актуальной доке npm; с id-token: write CLI берёт OIDC,
+      # секреты NPM_TOKEN / NODE_AUTH_TOKEN не нужны.
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
           cache: npm
+
+      - name: Ensure npm CLI supports Trusted Publishing
+        run: npm install -g npm@latest
+
       - run: npm ci
       - run: npm run typecheck && npm run build
-      # NPM_TOKEN не нужен: Trusted Publishing (OIDC).
-      # npmjs.com → package → Trusted Publisher → GitHub Actions →
-      # repo + workflow Publish (.github/workflows/publish.yml).
-      - run: npm publish --provenance --access public
+
+      # Без NPM_TOKEN. Сначала Trusted Publisher на npmjs.com:
+      # package → Settings → Trusted Publisher → GitHub Actions
+      #   Organization: hostkey-cloud-ru
+      #   Repository: mcp-server-ru
+      #   Workflow filename: publish.yml
+      #   Allowed actions: включить "npm publish" (не только stage)
+      - run: npm publish --access public --provenance
