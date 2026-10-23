@@ -70,10 +70,27 @@ export function registerRemoteTools(
     server,
     client,
     "add_static_nat",
-    "Создать статический DNAT до IPMI сервера (nat/add_static_nat): публичный IP для доступа к IPMI. Асинхронная операция — статус через check_task.",
+    "Создать статический DNAT до IPMI сервера (nat/add_static_nat): публичный IP для классического IPMI. Это не Secure IPMI Proxy в ЛК — Active Proxy сам по себе может не удовлетворять вызов. Асинхронно; статус через check_task. При server_ipmi_acl_required передайте ip_acl.",
     "nat",
     "add_static_nat",
-    idField,
+    {
+      ...idField,
+      ip_acl: z
+        .string()
+        .optional()
+        .describe(
+          "IP клиента(ов), с которых разрешён доступ к IPMI через NAT (InvAPI ip_acl). Нужен на части аккаунтов, если ACL Proxy из ЛК недостаточно.",
+        ),
+      secured: z
+        .union([z.boolean(), z.number().int()])
+        .optional()
+        .describe("Флаг secured NAT, если поддерживается InvAPI"),
+      ttl: z
+        .number()
+        .int()
+        .optional()
+        .describe("Время жизни NAT в секундах, если поддерживается"),
+    },
   );
 
   registerAction(

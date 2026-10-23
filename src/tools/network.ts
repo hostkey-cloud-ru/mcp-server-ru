@@ -15,10 +15,18 @@ export function registerNetworkTools(
     server,
     client,
     "get_network_status",
-    "Состояние сетевых интерфейсов сервера (net/get_status): порт, свитч, VLAN, скорость, MAC, статус подключения.",
+    "Состояние сетевых интерфейсов сервера (net/get_status): порт, свитч, VLAN, скорость, MAC, статус подключения. Опциональный port ограничивает запрос одним интерфейсом (если другой NIC без upstream_id ломает ответ).",
     "net",
     "get_status",
-    idField,
+    {
+      ...idField,
+      port: z
+        .string()
+        .optional()
+        .describe(
+          "Опциональный интерфейс/порт свитча (например eth0). Без параметра — все интерфейсы; при ошибке map switch на незамапленном NIC повторите с портом из get_server.",
+        ),
+    },
   );
 
   registerRead(

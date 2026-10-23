@@ -1,4 +1,4 @@
-﻿/** Hostkey MCP server (.ru / invapi.hostkey.ru). Env: see .env.example. */
+/** Hostkey MCP server (.ru / invapi.hostkey.ru). Env: see .env.example. */
 import { createHash } from "node:crypto";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -25,7 +25,7 @@ import { registerRawTool } from "./tools/raw.js";
 import { registerPrompts } from "./prompts.js";
 
 const SERVER_NAME = "hostkey-mcp-server-ru";
-const SERVER_VERSION = "1.0.7";
+const SERVER_VERSION = "1.0.8";
 const HOSTED_MCP_URL = "https://mcp.hostkey.ru/mcp";
 const SERVER_DESCRIPTION =
   "MCP server for Hostkey .ru portal (InvAPI invapi.hostkey.ru): servers, power, ordering, reinstall, DNS, S3, billing";
